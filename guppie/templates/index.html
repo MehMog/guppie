@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/assets/scripts/htmx.min.js"></script>
+    <script src="/assets/scripts/json-enc.js"></script>
+    <link rel="stylesheet" href="/assets/styles/milligram.css">
+    <link rel="stylesheet" href="/assets/styles/guppie.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+    <title>GUPPIE</title>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="column column-100">
+                <h1 style="text-align:center; font-weight: 500;">Atlantis GUPPIE</h1>
+            </div>            
+        </div>
+        <div id="feature-request-form" class="row">
+            <div class="column column-10">
+                <a class="button" 
+                    hx-get="/get_form" 
+                    hx-swap="afterBegin" 
+                    hx-target="#feature-request-form">New Request</a>
+            </div>
+        </div>
+        <div class="row">
+            <div id="feature-request-list" class="column column-80 column-offset-10">
+                {{features|safe}}
+            </div>
+        </div>
+    </div>  
+</body>
+</html>

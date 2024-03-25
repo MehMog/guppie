@@ -1,0 +1,35 @@
+<div id="{{request.id}}" class="feature-container row">
+    <div class="column column-10" style="margin:0">
+        <div class="rank-container">
+            <div style="height:2.5rem">
+                <img src="/assets/icons/up-arrow-circle-svgrepo-com.svg" alt="Upvote" style="user-select: none;cursor: pointer;height:2.5rem"
+                    hx-put="/increase_rank"
+                    hx-vars="{'id':'{{request.id}}'}"
+                    hx-ext="json-enc"
+                    hx-swap="outerHTML transition:true"
+                    hx-target="next .rank-number">
+            </div>
+            <div class="rank-number-container">
+                <h2 class="rank-number">{{request.rank}}</h2>
+            </div>
+            <div style="height:2.5rem">
+                <img src="/assets/icons/down-arrow-circle-svgrepo-com.svg" alt="Downvote" style="user-select: none;cursor: pointer;height:2.5rem"
+                    hx-put="/decrease_rank"
+                    hx-vars="{'id':'{{request.id}}'}"
+                    hx-ext="json-enc"
+                    hx-swap="outerHTML transition:true"
+                    hx-target="previous .rank-number">
+            </div>
+        </div>
+    </div>
+    <div class="column column-90 " style="margin:0">
+        <div class="feature-text-container">
+            <div class="feature-title-container">
+                <h3 style="margin:0; font-weight:600">{{request.name}}</h2>
+            </div>
+            <div class="feature-description-container">
+                <p style="margin:0">{{request.description}}</p>
+            </div>
+        </div>
+    </div>
+</div>
