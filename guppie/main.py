@@ -1,8 +1,9 @@
 from dotenv import load_dotenv
 import os
 import uuid
+import secrets
 from datetime import datetime
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -20,6 +21,17 @@ class Feature(SQLModel, table=True):
     priority: str
     description: str
     rank: int | None = Field(default=1)
+
+class User(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(sa_column_kwargs={"default": datetime.now()})
+
+class VoteTracker(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(default=None, foreign_key="user.id")
+    feature_id: uuid.UUID = Field(default=None, foreign_key="feature.id")
+    upvote: bool | None = Field(default=False)
+    downvote: bool | None = Field(default=False)
 
 
 engine = create_engine("mssql+pyodbc:///?odbc_connect=DSN=sqldb;UID="+os.getenv("MSSQL_UID")+";PWD="+os.getenv("MSSQL_PWD"))
@@ -40,7 +52,18 @@ def on_startup():
 # Define a route for the root endpoint
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
+
+    user_cookie = request.cookies.get("user_cookie")
+
     with Session(engine) as session:
+        if user_cookie is None:
+            user_cookie = User()
+            session.add(user_cookie)
+            session.commit()
+            session.refresh(user_cookie)
+
+            user_cookie = user_cookie.id
+
         statement = select(Feature)  # replace Item with your table class
         results = session.exec(statement)
         if not results:
@@ -50,7 +73,9 @@ async def read_root(request: Request):
             for feature in results:
                 features.append(templates.get_template('feature.html').render(request = feature))
         
-        return templates.TemplateResponse("index.html", {"request": request, "features": '\n'.join(features)})
+        response = templates.TemplateResponse("index.html", {"request": request, "features": '\n'.join(features)})
+        response.set_cookie(key="user_cookie", value=user_cookie)
+        return response
 
 @app.get("/get_form", response_class=HTMLResponse)
 async def read_root(request: Request):
