@@ -27,11 +27,9 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(sa_column_kwargs={"default": datetime.now()})
 
 class VoteTracker(SQLModel, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID = Field(default=None, foreign_key="user.id")
-    feature_id: uuid.UUID = Field(default=None, foreign_key="feature.id")
-    upvote: bool | None = Field(default=False)
-    downvote: bool | None = Field(default=False)
+    user_id: uuid.UUID = Field(default=None, foreign_key="user.id", primary_key=True)
+    feature_id: uuid.UUID = Field(default=None, foreign_key="feature.id", primary_key=True)
+    vote: int = Field(default=0)
 
 
 engine = create_engine("mssql+pyodbc:///?odbc_connect=DSN=sqldb;UID="+os.getenv("MSSQL_UID")+";PWD="+os.getenv("MSSQL_PWD"))
@@ -100,28 +98,54 @@ async def submit_feature(feature: Feature):
         return templates.TemplateResponse("feature.html", {"request": feature.model_dump()})
 
 @app.put("/increase_rank", response_class=HTMLResponse)
-async def increase_rank(feature: Feature):
+async def increase_rank(request: Request, feature: Feature):
+
     with Session(engine) as session:
         feature = session.get(Feature, feature.id)
+        
         if not feature:
             raise HTTPException(status_code=404, detail="Feature not found")
         
-        feature.rank += 1
-        session.commit()
-        session.refresh(feature)
+        user_cookie = request.cookies.get("user_cookie")
+        vote_tracker = session.get(VoteTracker, (user_cookie, feature.id))
+        
+        if not vote_tracker:
+            feature.rank += 1
+            session.add(VoteTracker(user_id=user_cookie, feature_id=feature.id, vote=1))
+            session.commit()
+            session.refresh(feature)
+        elif vote_tracker.vote < 1:
+            feature.rank += 1
+            vote_tracker.vote = vote_tracker.vote + 1
+            session.commit()
+            session.refresh(feature)
+
+        
         return '<h2 class="rank-number">'+str(feature.rank)+'</h2>'
     
 @app.put("/decrease_rank", response_class=HTMLResponse)
-async def increase_rank(feature: Feature):
+async def increase_rank(request: Request, feature: Feature):
+
     with Session(engine) as session:
         feature = session.get(Feature, feature.id)
+        
         if not feature:
             raise HTTPException(status_code=404, detail="Feature not found")
         
-        feature.rank = max(feature.rank - 1, 1)
-        session.commit()
-        session.refresh(feature)
+        user_cookie = request.cookies.get("user_cookie")
+        vote_tracker = session.get(VoteTracker, (user_cookie, feature.id))
+        
+        if not vote_tracker:
+            feature.rank = feature.rank - 1
+            session.add(VoteTracker(user_id=user_cookie, feature_id=feature.id, vote=-1))
+            session.commit()
+            session.refresh(feature)
+        elif vote_tracker.vote > -1:
+            feature.rank = feature.rank - 1
+            vote_tracker.vote = vote_tracker.vote-1
+            session.commit()
+            session.refresh(feature)
+        
         return '<h2 class="rank-number">'+str(feature.rank)+'</h2>'
-
 
 
