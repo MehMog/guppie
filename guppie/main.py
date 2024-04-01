@@ -36,7 +36,7 @@ map_priority = {"low": "Low", "med":"Medium", "high":"High"}
 map_priority_color = {"low": "primary", "med":"warning", "high":"danger"}
 
 
-engine = create_engine("mssql+pyodbc:///?odbc_connect=DSN=sqldb;UID="+os.getenv("MSSQL_UID")+";PWD="+os.getenv("MSSQL_PWD"))
+engine = create_engine("mssql+pyodbc:///?odbc_connect=DSN=sqldb;UID="+os.getenv("MSSQL_UID")+";PWD="+os.getenv("MSSQL_PWD")).execution_options(schema_translate_map={None: os.getenv("DATABASE_SCHEMA")})
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
