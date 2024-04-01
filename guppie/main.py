@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from jinja2 import Template
 from pydantic import BaseModel
 from typing import Optional
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, Session, SQLModel, create_engine, select, func
 
 load_dotenv()
 
@@ -19,6 +19,7 @@ class Feature(SQLModel, table=True):
     created_at: datetime = Field(sa_column_kwargs={"default": datetime.now()})
     name: str
     priority: str
+    product: str
     description: str
     rank: int | None = Field(default=1)
 
@@ -30,6 +31,9 @@ class VoteTracker(SQLModel, table=True):
     user_id: uuid.UUID = Field(default=None, foreign_key="user.id", primary_key=True)
     feature_id: uuid.UUID = Field(default=None, foreign_key="feature.id", primary_key=True)
     vote: int = Field(default=0)
+
+map_priority = {"low": "Low", "med":"Medium", "high":"High"}
+map_priority_color = {"low": "primary", "med":"warning", "high":"danger"}
 
 
 engine = create_engine("mssql+pyodbc:///?odbc_connect=DSN=sqldb;UID="+os.getenv("MSSQL_UID")+";PWD="+os.getenv("MSSQL_PWD"))
@@ -53,6 +57,9 @@ async def read_root(request: Request):
 
     user_cookie = request.cookies.get("user_cookie")
 
+    features = ['']
+    feature_votes = 0
+    feature_count = 0
     with Session(engine) as session:
         if user_cookie is None:
             user_cookie = User()
@@ -62,32 +69,37 @@ async def read_root(request: Request):
 
             user_cookie = user_cookie.id
 
-        statement = select(Feature)  # replace Item with your table class
+        statement = select(Feature).order_by(Feature.rank.desc())  # replace Item with your table class
         results = session.exec(statement)
-        if not results:
-            features = ['']
-        else:
+        if results:
             features = []
             for feature in results:
-                features.append(templates.get_template('feature.html').render(request = feature))
+                feature_votes += feature.rank
+                feature_count += 1
+                priority_mapped = map_priority.get(feature.priority)
+                priority_color_mapped = map_priority_color.get(feature.priority)
+                features.append(templates.get_template('feature.html').render(request = feature, priority_mapped=priority_mapped, priority_color=priority_color_mapped))
+            
         
-        response = templates.TemplateResponse("index.html", {"request": request, "features": '\n'.join(features)})
+        
+        response = templates.TemplateResponse("index.html", {"request": request
+                                                        , "features": '\n'.join(features)
+                                                        , "feature_votes": feature_votes
+                                                        , "feature_count": feature_count})
         response.set_cookie(key="user_cookie", value=user_cookie)
         return response
-
-@app.get("/get_form", response_class=HTMLResponse)
-async def read_root(request: Request):
-
-    return templates.TemplateResponse("form.html", {"request": request})
 
 
 @app.get("/feature", response_class=HTMLResponse)
 async def submit_feature(id: str):
     with Session(engine) as session:
         feature = session.get(Feature, Feature(id=id).id)
+        priority_mapped = map_priority.get(feature.priority)
+        priority_color_mapped = map_priority_color.get(feature.priority)
+        print(feature.priority)
         if not feature:
             raise HTTPException(status_code=404, detail="Feature not found")
-        return templates.TemplateResponse("feature.html", {"request": feature.model_dump()})
+        return templates.TemplateResponse("feature.html", {"request": feature.model_dump(), "priority_mapped": priority_mapped, "priority_color": priority_color_mapped})
 
 @app.post("/submit_feature", response_class=HTMLResponse)
 async def submit_feature(feature: Feature):
@@ -95,7 +107,9 @@ async def submit_feature(feature: Feature):
         session.add(feature)
         session.commit()
         session.refresh(feature)
-        return templates.TemplateResponse("feature.html", {"request": feature.model_dump()})
+        priority_mapped = map_priority.get(feature.priority)
+        priority_color_mapped = map_priority_color.get(feature.priority)
+        return templates.TemplateResponse("feature.html", {"request": feature.model_dump(), "priority_mapped": priority_mapped, "priority_color": priority_color_mapped})
 
 @app.put("/increase_rank", response_class=HTMLResponse)
 async def increase_rank(request: Request, feature: Feature):
@@ -121,7 +135,7 @@ async def increase_rank(request: Request, feature: Feature):
             session.refresh(feature)
 
         
-        return '<h2 class="rank-number">'+str(feature.rank)+'</h2>'
+        return str(feature.rank)
     
 @app.put("/decrease_rank", response_class=HTMLResponse)
 async def increase_rank(request: Request, feature: Feature):
@@ -141,11 +155,24 @@ async def increase_rank(request: Request, feature: Feature):
             session.commit()
             session.refresh(feature)
         elif vote_tracker.vote > -1:
-            feature.rank = feature.rank - 1
+            feature.rank = feature.rank-1 
             vote_tracker.vote = vote_tracker.vote-1
             session.commit()
             session.refresh(feature)
         
-        return '<h2 class="rank-number">'+str(feature.rank)+'</h2>'
+        return str(feature.rank)
 
 
+@app.get("/total_votes", response_class=HTMLResponse)
+async def total_votes():
+    with Session(engine) as session:
+        statement = select(func.sum(Feature.rank))
+        result = session.exec(statement).fetchall()[0]
+        return str(result)
+
+@app.get("/total_features", response_class=HTMLResponse)
+async def total_features():
+    with Session(engine) as session:
+        statement = select(func.count(Feature.id))
+        result = session.exec(statement).fetchall()[0]
+        return str(result)

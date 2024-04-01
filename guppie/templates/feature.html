@@ -1,35 +1,65 @@
-<div id="{{request.id}}" class="feature-container row">
-    <div class="column column-10" style="margin:0">
-        <div class="rank-container">
-            <div style="height:2.5rem">
-                <img src="/assets/icons/up-arrow-circle-svgrepo-com.svg" alt="Upvote" style="user-select: none;cursor: pointer;height:2.5rem"
-                    hx-put="/increase_rank"
-                    hx-vars="{'id':'{{request.id}}'}"
-                    hx-ext="json-enc"
-                    hx-swap="outerHTML transition:true"
-                    hx-target="next .rank-number">
+<div class="card" id="{{request.id}}">
+    <div class="card-content">
+        <div class="columns">
+            <div style="width:4rem; padding:10px" >
+                <div class="fixed-grid has-1-cols">
+                    <div class="cell">
+                        <div class="buttons is-centered">
+                            <button class="card-footer-item button is-medium is-primary"
+                                id="vote"
+                                hx-put="/increase_rank"
+                                hx-vars="{'id':'{{request.id}}'}"
+                                hx-ext="json-enc"
+                                hx-swap="innerHTML transition:true"
+                                hx-target="next #rank-number">
+                                <span class="icon is-medium">
+                                <i class="fas fa-circle-arrow-up"></i>
+                                </span>
+                            </button>
+                        </div>  
+                    </div>
+                    <div class="cell">
+                        <p class="card-footer-item title is-4" style="margin-bottom:0" id="rank-number">{{request.rank}}</p>
+                    </div>
+                    <div class="cell">
+                        <div class="buttons is-centered">
+                            <button class="card-footer-item button is-medium is-warning"
+                                id="vote"
+                                hx-put="/decrease_rank"
+                                hx-vars="{'id':'{{request.id}}'}"
+                                hx-ext="json-enc"
+                                hx-swap="innerHTML transition:true"
+                                hx-target="previous #rank-number">
+                                <span class="icon is-medium">
+                                <i class="fas fa-circle-arrow-down"></i>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    
+                    
+                </div>
             </div>
-            <div class="rank-number-container">
-                <h2 class="rank-number">{{request.rank}}</h2>
+            <div class="column">
+                <p class="title">{{request.name}}</p>
+                <p class="subtitle">{{request.description}}</p>
+                <div class="field is-grouped is-grouped-multiline">
+                    <div class="control">
+                        <div class="tags has-addons">
+                          <span class="tag is-dark">priority</span>
+                          <span class="tag is-{{priority_color}}">{{priority_mapped}}</span>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <div class="tags has-addons">
+                          <span class="tag is-dark">product</span>
+                          <span class="tag is-primary">{{request.product}}</span>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
-            <div style="height:2.5rem">
-                <img src="/assets/icons/down-arrow-circle-svgrepo-com.svg" alt="Downvote" style="user-select: none;cursor: pointer;height:2.5rem"
-                    hx-put="/decrease_rank"
-                    hx-vars="{'id':'{{request.id}}'}"
-                    hx-ext="json-enc"
-                    hx-swap="outerHTML transition:true"
-                    hx-target="previous .rank-number">
-            </div>
-        </div>
+        </div>        
     </div>
-    <div class="column column-90 " style="margin:0">
-        <div class="feature-text-container">
-            <div class="feature-title-container">
-                <h3 style="margin:0; font-weight:600">{{request.name}}</h2>
-            </div>
-            <div class="feature-description-container">
-                <p style="margin:0">{{request.description}}</p>
-            </div>
-        </div>
-    </div>
-</div>
+  </div>

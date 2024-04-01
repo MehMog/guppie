@@ -1,0 +1,38 @@
+// Set your brand colors
+$td-dark-green: #1a5336;
+$td-shield-green: #00B624;
+$td-primary-green: #038203;
+$beige-light: #FDF2DF;
+$td-orange: #FF9500;
+$red:#ae1100;
+$off-white: #e4e2df;
+$white: #f3f2f0;
+$dark-grey: #232323;
+
+// Path to Bulma's sass folder
+@use "bulma/sass" with (
+  $family-primary: '"Jost", sans-serif',
+  $grey-dark: $td-dark-green,
+  $grey-light: $beige-light,
+  $primary: $td-primary-green,
+  $warning: $td-orange,
+  $success: $td-shield-green,
+  $danger:$red,
+  $link: $td-shield-green,
+  $control-border-width: 1px,
+  $control-radius: 1px,
+  $white-ter: $white,
+  $card-background-color: $off-white,
+  $background: $white,
+  $body-background-color: $white,
+  $weight-extrabold:500,
+
+  $card-radius: .35rem,
+  $card-content-padding: .5rem,
+  $card-footer-padding: .35rem
+);
+
+@use 'bulma/versions/bulma-no-dark-mode';
+
+// Import the Google Font
+@import url("https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap");

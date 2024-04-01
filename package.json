@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "bulma": "^1.0.0",
+    "sass": "^1.72.0"
+  },
+    "scripts": {
+    "build-bulma": "sass --load-path=node_modules td-bulma.scss guppie/assets/styles/td-bulma.css",
+    "start": "npm run build-bulma -- --watch"
+  }
+}
+
